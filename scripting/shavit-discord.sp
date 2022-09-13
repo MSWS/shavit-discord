@@ -18,7 +18,7 @@ ConVar g_cvHostname,
   g_cvMinimumrecords,
   g_cvThumbnailUrlRoot,
   g_cvBotUsername,
-  g_cvFooterUrl,
+  // g_cvFooterUrl,
   g_cvMainEmbedColor,
   g_cvBonusEmbedColor,
   g_cvSteamWebAPIKey;
@@ -41,10 +41,10 @@ public void OnPluginStart() {
     g_cvWebhook          = CreateConVar("sm_bhop_discord_webhook", "", "The webhook to the discord channel where you want record messages to be sent.", FCVAR_PROTECTED);
     g_cvThumbnailUrlRoot = CreateConVar("sm_bhop_discord_thumbnail_root_url", "https://image.gametracker.com/images/maps/160x120/csgo/${mapname}.jpg", "The base url of where the Discord images are stored. Leave blank to disable.");
     g_cvBotUsername      = CreateConVar("sm_bhop_discord_username", "", "Username of the bot");
-    g_cvFooterUrl        = CreateConVar("sm_bhop_discord_footer_url", "https://images-ext-1.discordapp.net/external/tfTL-r42Kv1qP4FFY6sQYDT1BBA2fXzDjVmcknAOwNI/https/images-ext-2.discordapp.net/external/3K6ho0iMG_dIVSlaf0hFluQFRGqC2jkO9vWFUlWYOnM/https/images-ext-2.discordapp.net/external/aO9crvExsYt5_mvL72MFLp92zqYJfTnteRqczxg7wWI/https/discordsl.com/assets/img/img.png", "The url of the footer icon, leave blank to disable.");
-    g_cvMainEmbedColor   = CreateConVar("sm_bhop_discord_main_color", "#00ffff", "Color of embed for when main wr is beaten");
-    g_cvBonusEmbedColor  = CreateConVar("sm_bhop_discord_bonus_color", "#ff0000", "Color of embed for when bonus wr is beaten");
-    g_cvSteamWebAPIKey   = CreateConVar("kzt_discord_steam_api_key", "", "Allows the use of the player profile picture, leave blank to disable. The key can be obtained here: https://steamcommunity.com/dev/apikey", FCVAR_PROTECTED);
+    // g_cvFooterUrl        = CreateConVar("sm_bhop_discord_footer_url", "https://images-ext-1.discordapp.net/external/tfTL-r42Kv1qP4FFY6sQYDT1BBA2fXzDjVmcknAOwNI/https/images-ext-2.discordapp.net/external/3K6ho0iMG_dIVSlaf0hFluQFRGqC2jkO9vWFUlWYOnM/https/images-ext-2.discordapp.net/external/aO9crvExsYt5_mvL72MFLp92zqYJfTnteRqczxg7wWI/https/discordsl.com/assets/img/img.png", "The url of the footer icon, leave blank to disable.");
+    g_cvMainEmbedColor  = CreateConVar("sm_bhop_discord_main_color", "#00ffff", "Color of embed for when main wr is beaten");
+    g_cvBonusEmbedColor = CreateConVar("sm_bhop_discord_bonus_color", "#ff0000", "Color of embed for when bonus wr is beaten");
+    g_cvSteamWebAPIKey  = CreateConVar("kzt_discord_steam_api_key", "", "Allows the use of the player profile picture, leave blank to disable. The key can be obtained here: https://steamcommunity.com/dev/apikey", FCVAR_PROTECTED);
 
     g_cvHostname = FindConVar("hostname");
     g_cvHostname.GetString(g_cHostname, sizeof(g_cHostname));
@@ -92,8 +92,9 @@ public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, i
         return;
     if (!StrEqual(g_szApiKey, "") && g_bRIPExt)
         GetProfilePictureURL(client, style, time, jumps, strafes, sync, track, oldwr, oldtime, perfs);
-    else
+    else {
         sendDiscordAnnouncement(client, style, time, jumps, strafes, sync, track, oldwr, oldtime, perfs);
+    }
 }
 
 stock void sendDiscordAnnouncement(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldwr, float oldtime, float perfs) {
@@ -113,7 +114,15 @@ stock void sendDiscordAnnouncement(int client, int style, float time, int jumps,
 
     MessageEmbed embed = new MessageEmbed();
 
-    embed.SetColor((track == Track_Main) ? szMainColor : szBonusColor);
+    char color[16];
+    Shavit_GetStyleSetting(style, "htmlcolor", color, sizeof(color));
+
+    // embed.SetColor((track == Track_Main) ? szMainColor : szBonusColor);
+    char finalColor[8];
+    if (StrContains(color, "#") != 0)
+        StrCat(finalColor, sizeof(finalColor), "#");
+    StrCat(finalColor, sizeof(finalColor), color);
+    embed.SetColor(finalColor);
 
     char styleName[128];
     Shavit_GetStyleStrings(style, sStyleName, styleName, sizeof(styleName));
@@ -138,9 +147,11 @@ stock void sendDiscordAnnouncement(int client, int style, float time, int jumps,
     Format(buffer, sizeof(buffer), "%ss (%ss)", buffer, szOldTime);
     embed.AddField("Time:", buffer, true);
 
-    FormatSeconds(oldwr, szOldTime, sizeof(szOldTime));
-    Format(szOldTime, sizeof(szOldTime), "%ss", szOldTime);
-    embed.AddField("Previous Time:", szOldTime, true);
+    if (oldwr != 0.0) {
+        FormatSeconds(oldwr, szOldTime, sizeof(szOldTime));
+        Format(szOldTime, sizeof(szOldTime), "%ss", szOldTime);
+        embed.AddField("Previous Time:", szOldTime, true);
+    }
 
     Format(buffer, sizeof(buffer), "**Strafes**: %i  **Sync**: %.2f%%  **Jumps**: %i  **Perfect jumps**: %.2f%%", strafes, sync, jumps, perfs);
     embed.AddField("Stats:", buffer, false);
@@ -154,17 +165,9 @@ stock void sendDiscordAnnouncement(int client, int style, float time, int jumps,
         ReplaceString(szUrl, sizeof szUrl, "${mapname}", g_cCurrentMap);
     }
 
-    if (StrEqual(g_szPictureURL, ""))
-        embed.SetThumb(szUrl);
-    else {
-        embed.SetImage(szUrl);
-        embed.SetThumb(g_szPictureURL);
-    }
-
-    char szFooterUrl[1024];
-    GetConVarString(g_cvFooterUrl, szFooterUrl, sizeof szFooterUrl);
-    if (!StrEqual(szFooterUrl, ""))
-        embed.SetFooterIcon(szFooterUrl);
+    embed.SetThumb(szUrl);
+    if (!StrEqual(g_szPictureURL, ""))
+        embed.SetFooterIcon(g_szPictureURL);
 
     Format(buffer, sizeof(buffer), "Server: %s", g_cHostname);
     embed.SetFooter(buffer);
