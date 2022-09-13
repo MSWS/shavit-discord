@@ -82,9 +82,9 @@ public void OnMapStart() {
 }
 
 public Action CommandDiscordTest(int client, int args) {
-		Shavit_OnWorldRecord(client, 1, 12.3, 35, 23, 93.25, 1, 14.01, 14.5, 82.3, 3.6, 1500.0, 1);
+    Shavit_OnWorldRecord(client, 1, 12.3, 35, 23, 93.25, 1, 14.01, 14.5, 82.3, 3.6, 1500.0, 1);
     CPrintToChat(client, "{green}[shavit-discord] {default}Discord Test Message has been sent.");
-		return Plugin_Handled;
+    return Plugin_Handled;
 }
 
 public void Shavit_OnWorldRecord(int client, int style, float time, int jumps, int strafes, float sync, int track, float oldwr, float oldtime, float perfs, float avgvel, float maxvel, int timestamp) {
@@ -256,4 +256,5 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     MarkNativeAsOptional("JSONArray.Length.get");
     MarkNativeAsOptional("JSONArray.Get");
     MarkNativeAsOptional("HTTPResponse.Data.get");
+    return APLRes_Success;
 }
