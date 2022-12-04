@@ -1,7 +1,7 @@
 #include <sourcemod>
 #include <shavit>
 #include <discord>
-#include <colorvariables>
+// #include <colorvariables>
 #undef REQUIRE_EXTENSIONS
 #include <ripext>
 #pragma newdecls required
@@ -83,7 +83,8 @@ public void OnMapStart() {
 
 public Action CommandDiscordTest(int client, int args) {
     Shavit_OnWorldRecord(client, 1, 12.3, 35, 23, 93.25, 1, 14.01, 14.5, 82.3, 3.6, 1500.0, 1);
-    CPrintToChat(client, "{green}[shavit-discord] {default}Discord Test Message has been sent.");
+    PrintToChat(client, "Test Message has been sent.");
+    // CPrintToChat(client, "{green}[shavit-discord] {default}Discord Test Message has been sent.");
     return Plugin_Handled;
 }
 
